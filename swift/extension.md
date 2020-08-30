@@ -63,11 +63,12 @@ s.area //extension 으로 속성을 추가했지만 다른 속성들과 차이�
 }</code></pre>
 
 
-## Properties
+## Properties 추가
 익스텐션에서는 계산속성만 추가 가능하다.
 앞에서 언급하였듯 저장 속성이나 프로퍼티 옵저버를 추가하는 것은 불가하다.
 형식에 존재하는 속성을 오버라이딩 하는 것도 불가하다. 
 
+### 
 <pre><code>extension Date {
    var year: Int {
       let cal = Calendar.current
