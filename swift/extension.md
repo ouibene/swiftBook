@@ -68,7 +68,7 @@ s.area //extension 으로 속성을 추가했지만 다른 속성들과 차이�
 앞에서 언급하였듯 저장 속성이나 프로퍼티 옵저버를 추가하는 것은 불가하다.
 형식에 존재하는 속성을 오버라이딩 하는 것도 불가하다. 
 
-<code><pre>extension Date {
+<pre><code>extension Date {
    var year: Int {
       let cal = Calendar.current
       return cal.component(.year, from: self)
@@ -77,10 +77,10 @@ s.area //extension 으로 속성을 추가했지만 다른 속성들과 차이�
 
 let today = Date()
 today.year //연도가 return 된다.
-</code></pre>
+</pre></code>
 
 
-<code><pre>extension Double {
+<pre><code>extension Double {
    var radianValue: Double {
       return (Double.pi * self) / 180.0
    }
@@ -93,4 +93,4 @@ today.year //연도가 return 된다.
 let dv = 45.0
 dv.radianValue //45 를 radian으로 변환한 형식이 리턴된다
 dv.radianValue.degreeValue //이렇게 연달아 사용할 수도 있다. 이 때에는 다시 degree로 변환된 값이 출력된다.
-</code></pre>
+</pre></code>
