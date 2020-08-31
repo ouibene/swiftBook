@@ -95,3 +95,62 @@ let dv = 45.0
 dv.radianValue //45 를 radian으로 변환한 형식이 리턴된다
 dv.radianValue.degreeValue //이렇게 연달아 사용할 수도 있다. 이 때에는 다시 degree로 변환된 값이 출력된다.
 </pre></code>
+
+## Method 추가
+
+<pre><code>/* double 에 저장된 실수를 섭씨 온도와 화씨 온도로 변환하는 코드 */
+extension Double {
+   /* Instance method */
+   func toFahrenheit() -> Double {
+      return self * 9 / 5 + 32
+   }
+   
+   func toCelsius() -> Double {
+      return (self - 32) * 5 / 9
+   }
+   
+   /* Type method */
+   static func convertToFahrenheit(from celsius: Double) -> Double {
+      return celsius.toFahrenheit()
+   }
+}
+
+let c = 30.0
+c.toFahrenheit() //화씨 온도로 변환된 값이 출력된다.
+
+Double.convertToFahrenheit(from: 30.0) //extension을 통해 method 를 추가했지만 원본형식의 Type method와 차이가 없다.</pre></code>
+
+
+<pre><code>extension Date {
+   func toString(format: String = "yyyyMMdd") -> String {
+      let privateFormatter = DateFormatter()
+      privateFormatter.dateFormat = format
+      return privateFormatter.string(from: self)
+   }
+}
+
+let today = Date()
+today.toString() //parameter 생략하고 호출하면 기본값으로 지정된 형식으로 출력 됨
+
+/* 전달된 포맷으로 문자열 출력 됨 */
+today.toString(format: "MM/dd/yyyy")</pre></code>
+
+
+<pre><code>extension String {
+   static func random(length: Int, charactersIn chars: String = "abcdefghijklmnopqrstuvwxyz") -> String {
+      var randomString = String()
+      randomString.reserveCapacity(length)
+      
+      for _ in 0 ..< length {
+         guard let char = chars.randomElement() else {
+            continue
+         }
+         
+         randomString.append(char)
+      }
+      
+      return randomString
+   }
+}
+
+String.random(length: 5) //5자리의 random 문자열 구성</pre></code>
