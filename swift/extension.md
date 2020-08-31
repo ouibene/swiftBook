@@ -154,3 +154,64 @@ today.toString(format: "MM/dd/yyyy")</pre></code>
 }
 
 String.random(length: 5) //5자리의 random 문자열 구성</pre></code>
+
+
+## Initializers 추가
+
+<pre><code>extension Date {
+   init?(year: Int, month: Int, day: Int) {
+      let cal = Calendar.current
+      let comp = DateComponents()
+      comp.year = year
+      comp.month = month
+      comp.day = day
+      
+      guard let date = cal.date(from: comp) else {
+         return nil
+      }
+      
+      self = date
+   }
+}
+
+Date(year: 2020, month: 8, day: 31)</pre></code>
+
+
+
+<pre><code>extension UIColor {
+   convenience init(red: Int, green: Int, blue: Int) {
+      self.init(red: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1.0)
+   }
+}
+
+UIColor(red: 0, green: 0, blue: 255)</pre></code>
+
+
+
+### default initializer , Memberwise initializer
+
+<pre><code>struct Size {
+   var width = 0.0
+   var height = 0.0
+   
+   init(value: Double) {
+      width = value
+      height = value
+   }
+}
+
+위와 같이 생성자 추가 시 아래의 코드에서 에러 발생한다.
+아래의 코드에서 에러를 발생시키지 않으려면 기본생성자, 파라미터가 2개인 생성자를 추가하거나...
+Size()
+Size(width: 12, height: 34)
+
+아래와 같이 Extension 추가한다. Extension을 사용하면 기본으로 제공되는 생성자와 함께 사용할 수 있다. 
+extension Size {
+   init(value: Double) {
+      width = value
+      height = value
+   }
+}
+
+Size()
+Size(width: 12, height: 34)</pre></code>
