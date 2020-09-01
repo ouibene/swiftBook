@@ -223,7 +223,7 @@ String 기본 구현은 정수 인덱스를 subscript로 전달할 수 없고 st
 
 <pre><code> extension String {
    subscript(idx: Int) -> String? {
-      guard (0..<count).contains(idx) else {
+      guard (0.. < count).contains(idx) else {
          return nil
       }
       
