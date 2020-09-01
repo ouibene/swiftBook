@@ -215,3 +215,35 @@ extension Size {
 
 Size()
 Size(width: 12, height: 34)</pre></code>
+
+
+### Subscript 추가
+String 기본 구현은 정수 인덱스를 subscript로 전달할 수 없고 sting.index를 전달해야 한다.
+아래는 정수 인덱스를 사용할 수 있도록 구현한 예제이다.
+
+<pre><code> extension String {
+   subscript(idx: Int) -> String? {
+      guard (0..<count).contains(idx) else {
+         return nil
+      }
+      
+      let target = index(startIndex, offsetBy: idx)
+      return String(self[target])
+   }
+}
+
+let str = "Swift"
+str[1] //w 가 전달된다.
+str[100] //nil 이 전달된다.</code></pre>
+
+<pre><code> extension Date {
+   subscript(component: Calendar.Component) -> Int? {
+      let cal = Calendar.current
+      return cal.component(component, from: self)
+   }
+}
+
+let today = Date()
+today[.year] //2020이 출력된다. (현재 연도)
+today[.month]
+today[.day] //오늘의 월, 일이 리턴된다. </code></pre>
