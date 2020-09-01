@@ -67,3 +67,113 @@ class Object: SomethingObject {
   
   } //Something protocol 에 있는 메서드 선언을 상속받으므로, 멤버인 doSomething 메서드를 구현해야 한다. 
 }</pre></code>
+
+## Property Requirements
+프로토콜에서 속성을 선언하고 형식에서 속성 요구사항을 구현하는 방법에 대해 후술한다.
+
+<pre><code>protocol ProtocolName {
+  var name: Type { get set }
+  static var name: Type { get set }
+}</pre></code>
+
+형식에서 속성을 선언할 때에는 가변성에 따라 let 이나 var 를 선언하지만, 프로토콜에서는 var 키워드로만 선언한다.
+프로토콜에서의 var 키워드는 가변성과는 관계가 없으며 선언하는 멤버가 속성임을 나타낼 뿐이다.
+
+brace 사이에 get, set 이 위치하는데, 이 두 키워드가 속성의 가변성을 결정한다.
+get, set이 모두 선언되어 있다면 형식에서 읽기와 쓰기가 모두 가능한 속성을 선언해야 한다.
+get 만 포함된 경우에는 형식에서 읽기전용 속성으로 선언해도 되고, 읽기 쓰기가 모두 가능한 속성을 선언해도 문제 없다. 
+
+형식 속성으로 선언할 때에는 var 키워드 앞에 static 키워드를 추가한다.
+
+<pre><code>protocol Figure {
+  var name: String { get }
+}
+
+struct Rectangle: Figure {
+  // 프로토콜에 선언되어있는 속성을 형식에 추가해야 한다. 이름과 형식을 모두 맞추어 주도록 한다.
+  let name: "Rectangle" //상수 저장속성으로 선언하면 요구사항을 충족한다.
+}
+
+struct Triangle: Figure {
+  var name: "Triangle" //get만 포함되었다고 해서 읽기 전용 속성으로 선언해야 하는 것은 아니다.
+}
+
+struct Circle: Figure {
+  var name: String {
+    return "Circle"
+  } //이렇게 선언하더라도 요구사항을 충족한다.
+}</pre></code>
+
+
+<pre><code>protocol Figure {
+  var name: String { get set }
+}
+
+struct Rectangle: Figure {
+  let name: "Rectangle" // ERROR! 읽기와 쓰기가 가능한 속성으로 선언하여야 한다. 값을 쓰는 것이 불가능하기 때문이다. let 키워드를 var 로 바꾸도록 한다.
+}
+
+struct Triangle: Figure {
+  var name: "Triangle" // 요구사항을 충족한다.
+}
+
+struct Circle: Figure {
+  var name: String {
+    return "Circle"
+  } // ERROR! 읽기 전용 계산속성이다. set 블록을 추가한다.
+}</pre></code>
+
+<pre><code>struct Circle: Figure {
+  var name: String {
+    get {
+      return "Circle"
+    } 
+    set {
+    
+    }
+  }
+}</pre></code>
+
+
+이번에는 var 키워드 앞에 static 키워드를 추가하도록 한다.
+이렇게 하면 모든 속성을 형식 속성으로 선언하여야 한다. 
+
+<pre><code>protocol Figure {
+  static var name: String { get set }
+}
+
+struct Rectangle: Figure {
+  static var name: "Rectangle"
+
+struct Triangle: Figure {
+  static var name: "Triangle" 
+}
+
+struct Circle: Figure {
+  static var name: String {
+    get {
+      return "Circle"
+    } 
+    set {
+    
+    }
+  }
+}</pre></code>
+
+circle 구조체를 클래스로 바꾸어본다. - (1)
+static 키워드로 선언된 속성은 서브클래스로 상속되지만 오버라이딩은 불가하다.
+오버라이딩을 허용하려면 static 키워드 대신 class 키워드로 선언한다. - (2)
+
+<pre><code>class Circle: Figure { - (1)
+  class var name: String { - (2) name 속성은 여전히 형식 속성이고, 이름과 자료형, 가변성도 동일하다. 그렇기 때문에 프로토콜 요구사항을 충족한다. 서브클래스에서 오버라이딩 하는 것도 가능하다.
+    get {
+      return "Circle"
+    } 
+    set {
+    
+    }
+  }
+}</pre></code>
+
+프로토콜에서 static으로 선언되어 있다고 하여 형식에서도 static으로 선언해야 하는 것은 아니다.
+static과 class 으로 선언되어 있는 속성 모두 요구사항을 충족한다. 
