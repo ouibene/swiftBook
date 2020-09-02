@@ -177,3 +177,126 @@ static 키워드로 선언된 속성은 서브클래스로 상속되지만 오�
 
 프로토콜에서 static으로 선언되어 있다고 하여 형식에서도 static으로 선언해야 하는 것은 아니다.
 static과 class 으로 선언되어 있는 속성 모두 요구사항을 충족한다. 
+
+
+## Method Requirements
+Protocol 에서 method 를 작성할 때에는 아래와 같이 헤더만 작성한다. 
+typemethod 를 선언할 때에는 func 앞에 static 을 추가한다. 
+만약 프로토콜을 값 형식이 채용할 수 있고, 메서드 내부에서 속성 값을 변경해야 한다면 mutating 키워드를 사용한다. 
+이 때의 mutating 은 값 형식 전용이라는 것을 나타내기 보다는 메서드가 속성 값을 변경할 수 있는 역할을 할 수 있게끔 하는 키워드라고 보아야 한다. 
+따라서 참조 형식에서도 채용이 가능하다. 
+<pre><code>protocol ProtocolName {
+  func name(param) -> ReturnType
+  static func name(param) -> ReturnType
+  mutating func name(param) -> ReturnType
+}</pre></code>
+
+<pre><code> protocol Resettable {
+  func reset()
+}
+
+class Size: Resettable {
+  var width = 0.0
+  var height = 0.0
+  
+  func reset() {
+    width = 0.0
+    height = 0.0
+  }
+}
+</pre></code>
+프로토콜은 메서드의 실제 구현은 상관하지 않는다. 
+메서드 이름, 파라미터 형식, 리턴형만 일치시켜 주면 된다.
+
+<pre><code>protocol Resettable { 
+  func reset()
+}
+
+struct Size: Resettable { // struct 키워드를 사용하면...
+  var width = 0.0
+  var height = 0.0
+  
+  func reset() {
+    width = 0.0   //Error! Cannot assign to property: 'self' is immutable
+    height = 0.0  //Error! Cannot assign to property: 'self' is immutable
+  }
+}
+</pre></code>
+값 형식의 인스턴스 메서드에서 속성 값을 바꾸려면 func 키워드 앞에 mutating 키워드를 추가해야 한다. 
+
+<pre><code>protocol Resettable { 
+  func reset()
+}
+
+struct Size: Resettable { //Error! 
+  var width = 0.0
+  var height = 0.0
+  
+  mutating func reset() { //값 형식에서 속성을 바꾸는 메서드라면 프로토콜에서 선언할 때에도 mutating 키워드를 추가한다. 
+    width = 0.0  
+    height = 0.0 
+  }
+}
+</pre></code>
+
+<pre><code>protocol Resettable { 
+  mutating func reset()
+}
+
+struct Size: Resettable { 
+  var width = 0.0
+  var height = 0.0
+  
+  mutating func reset() {
+    width = 0.0  
+    height = 0.0 
+  }
+}
+</pre></code>
+
+Size 구조체를 다시 class 로 바꾸어본다. mutating 는 값 형식에서만 사용하는 키워드이므로 삭제한다.
+<pre><code>struct Resettable { 
+  mutating func reset()
+}
+
+class Size: Resettable { 
+  var width = 0.0
+  var height = 0.0
+  
+  func reset() {
+    width = 0.0  
+    height = 0.0 
+  }
+}
+</pre></code>
+Class 에서는 mutating 키워드를 추가하지 않더라도 메서드에서 속성을 바꿀 수 있다. 
+
+이번에는 reset method를 type method 로 선언한다. 
+<pre><code>struct Resettable { 
+  statuc func reset()
+}
+
+class Size: Resettable { 
+  var width = 0.0
+  var height = 0.0
+  
+  func reset() {
+    width = 0.0  
+    height = 0.0 
+  }
+  
+  static func reset() {
+  
+  }
+}
+</pre></code>
+오버로딩 규칙에 따라서 이름이 동일한 메서드를 인스턴스 메서드와 타입 메서드로 동시에 구현할 수 있다. 
+이 메서드는 서브클래스로 상속되지만 오버라이딩은 불가하다. 
+
+<pre><code>...
+  class func reset() {
+  
+  }
+  ...
+</pre></code>
+위와 같이 속성과 마찬가지로 static 대신 class 로 선언하면, 오버라이딩을 허용하는 동시에 프로토콜의 요구사항을 충족시킨다.
