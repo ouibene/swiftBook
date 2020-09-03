@@ -300,3 +300,130 @@ class Size: Resettable {
   ...
 </pre></code>
 위와 같이 속성과 마찬가지로 static 대신 class 로 선언하면, 오버라이딩을 허용하는 동시에 프로토콜의 요구사항을 충족시킨다.
+
+
+## Initializer Requirements
+프로토콜에서 생성자를 선언할 때는 메서드와 마찬가지로 바디를 생략한 형태로 선언한다. 
+그리고 Failable initializer 를 선언하는 것도 가능하다.
+<pre><code>protocol ProtocolName {
+  init(param)
+  init?(param)
+  init!(param)
+}</pre></code>
+
+### Memberwise initializer
+<pre><code>protocol Figure{
+  var name: String { get }
+  init(name: String)
+}
+
+struct Rectangle: Figure {
+  var name: String
+} 
+// 생성자를 구현해야 할 것 같지만, 이 자체로도 프로토콜 요구사항을 충족시킨다. 
+  Rectangle 구조체에는 생성자가 적용되어 있지 않다. 이 경우 Memberwise initializer가 자동 적용된다. 
+  Memberwise initializer는 속성 이름과 동일한 argument label을 가지고 있는데, 마침 프로토콜에 선언되어 있는 생성자와 동일하다.
+  따라서 프로토콜의 요구사항을 충족시키는 것이다. 
+</pre></code>
+
+
+<pre><code>protocol Figure{
+  var name: String { get }
+  init(n: String) //프로토콜의 argument label이 n 으로 바뀜
+}
+
+struct Rectangle: Figure {  //이렇게 하면 더이상 Memberwise initializer를 통해 프로토콜 요구사항을 충족시키지 못한다. 
+  var name: String
+  
+  init (n: String) { //그래서 생성자를 직접 구현한다.
+    name = n
+  }
+} 
+
+class Circle: Figure {
+  var name: String
+  
+  init (n: String) { //Error! 클래스는 상속을 고려해야 하고, 모든 서브클래스에서 프로토콜의 요구사항을 충족시켜야 한다. 따라서 required 키워드를 추가해야 한다. 
+    name = n
+  }
+}
+</pre></code>
+
+아래와 같이 required 키워드를 추가하면 에러가 발생하지 않는다. 
+이제 Circle class 와 이 클래스를 상속한 모든 서브클래스는 프로토콜 요구사항을 충족해야 한다. 
+<pre><code>class Circle: Figure {
+  var name: String
+  
+  required init (n: String) {
+    name = n
+  }
+}
+</pre></code>
+
+### 예외! final
+<pre><code>final class Triangle: Figure { //더이상 상속되지 않기 때문에, 상속을 고려할 필요가 없다. 
+  var name: String
+  
+  init (n: String) { //따라서 required 키워드 없이도 요구사항을 충족한다. 
+    name = n
+  }
+}</pre></code>
+
+<pre><code>class Oval: Circle, Figure { //Error! 이미 Super class 에서 프로토콜 요구사항을 상속하고 있기 때문에 다시 Figure 를 채용하는 것은 중복이다.
+  
+}</pre></code>
+
+<pre><code>class Oval: Circle { 
+  var prop: Int
+  
+  init() { //여기에서 구현한 생성자는 프로토콜의 선언되어 있는 생성자와 파라미터 목록이 다르기 때문에 요구사항을 충족하지 못한다. 따라서 프로토콜과 동일한 생성자를 구현해야 한다. 
+    prop = 0
+    super.init(n: "Oval")
+  }
+  
+  required convenience init(n: String) {
+    self.init() //반드시 지정생성자로 구현해야 하는 것은 아니다. 지금처럼 convenience init 으로 구현하더라도 요구사항을 충족할 수 있다. 다만 여기에서도 required 가 필요하다. 
+  }
+}</pre></code>
+
+
+### Non-faliable initializer 와 Failable initializer
+<pre><code>protocol Grayscale {
+  init(white: Double)
+}
+
+struct Color: Grayscale {
+  init?(white: Double) { //Error! non-failable init 요구사항을 failable init으로 충족시킬 수 없다는 에러가 발생한다.
+    
+  }
+}
+
+struct Color: Grayscale {
+  init!(white: Double) { //이렇게 하면 에러는 발생하지 않지만, 초기화에 실패하면 런타임 에러가 발생한다. 
+    
+  }
+}</pre></code>
+
+
+프로토콜의 생성자를 Failable initializer 로 바꾸어본다.
+<pre><code>protocol Grayscale {
+  init?(white: Double)
+}
+
+struct Color: Grayscale {
+  init!(white: Double) { // (1) -- 문제 없다
+    
+  }
+}
+
+struct Color: Grayscale {
+  init?(white: Double) { // (2) --문제 없다
+    
+  }
+}
+
+struct Color: Grayscale {
+  init(white: Double) { // (3) --문제 없다
+    
+  }
+}</pre></code>
