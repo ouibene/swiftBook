@@ -433,7 +433,7 @@ struct Color: Grayscale {
 속성과 마찬가지로 brace 사이에 get, set을 추가하여 가변성을 지정한다. 
 <pre><code>protocol ProtocolName {
   subscript(param) -> ReturnType { get set }
-}</pre><code>
+}</pre></code>
 
 <pre><code>protocol List {
   subscript(idx: Int) -> Int { get }
@@ -443,7 +443,7 @@ struct DataStore: List {
   subscript(idx: Int) -> Int {
     return 0
   } // 이와 같이 읽기 전용 서브스크립트를 구현하면 요구사항이 충족된다.
-}</pre><code>
+}</pre></code>
 
 ### Subscript 에 set keyword 추가
 <pre><code>protocol List {
@@ -454,7 +454,7 @@ struct DataStore: List {
   subscript(idx: Int) -> Int {
     return 0
   } // Error!  요구사항을 충족시키려면 읽기, 쓰기가 모두 가능해야 한다. 
-}</pre><code>
+}</pre></code>
 
 <pre><code>struct DataStore: List {
   subscript(idx: Int) -> Int {
@@ -466,7 +466,7 @@ struct DataStore: List {
     }
   } // subscript 가 읽기, 쓰기가 모두 가능해지기 때문에 프로토콜의 요구사항을 충족한다. 
 }
-</pre><code>
+</pre></code>
 
 subscript 에서 get 으로 선언했다고 하여 실제 구현에서 get 블록만 구현해야 하는 것은 아니다. 
 값을 읽을 수 있는 요구사항만 충족시키면 나머지 구현에는 제약이 없다. 
@@ -486,4 +486,4 @@ struct DataStore: List {
     }
   } // DataStore 가 이미 요구사항을 충족시키고 있기 때문에 에러가 발생하지 않는다. 
 }
-</pre><code>
+</pre></code>
