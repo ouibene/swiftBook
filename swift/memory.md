@@ -80,14 +80,73 @@ CPU는 메모리 주소를 저장하고 특정 위치에 접근하기 위해서 
 값을 더 이상 사용하지 않는다면 두 공간에 저장되어 있는 데이터를 완전히 삭제하여 메모리 누수를 방지하는 것이 중요하다. 
  
 
+## Value Type & Reference Type
+Swift 에서 Structure, Enumeration, Tuple은 값 형식(Value Type)으로 분류하고, 
+Class, Closure는 참조 형식(Reference Type)으로 분류한다. 
 
+<pre><code>struct SizeValue {
+ var width = 0.0
+ var height = 0.0
+}
 
+/* 인스턴스 생성.
+ * 스택에 메모리 공간이 생성되고 여기에 0.0 으로 초기화된 값이 저장된다.
+ * 그리고 value 변수와 memory 공간이 연결된다. 
+ */
 
+var value = SizeValue()
 
+/* 값 복사.
+ * value instance의 복사본이 새로운 메모리에 저장되고 
+ * 이 메모리와 value2 변수가 연결된다. 
+ * 두 인스턴스의 속성 값은 모두 동일하지만
+ * 서로 다른 메모리에 저장된 개별 인스턴스이다.
+ */ 
+var value2 = value
 
+/* 새로운 값으로 업데이트
+ * value2와 연결된 메모리가 새로운 값으로 업데이트 된다.
+ * 그러나 value 와 연결된 메모리는 업데이트되지 않는다. 
+ */
+value2.width = 1.0
+value2.height = 2.0
 
+value
+value2 //이 코드를 통해 값을 확인해보면 value2만 업데이트 됨을 알 수 있다. 
 
+값 형식은 항상 stack에 저장된다. 그리고 값을 전달할 때 마다 새로운 복사본이 생성된다. 
+스위프트에서는 값을 변경하는 경우에만 실제로 복사되도록 최적화 하고 있다. (Copy on write)
+</pre></code>
 
+<pre><code>class SizeValue {
+ var width = 0.0
+ var height = 0.0
+}
+
+/* 인스턴스 생성 
+ * 스택과 힙에 새로운 공간이 생성된다.
+ * 힙에는 인스턴스가 저장되고 스택에는 힙 메모리의 주소가 저장된다. 
+ * 그리고 object 변수는 스택에 생성된 메모리와 연결된다.
+ * 값 형식 처럼 바로 인스턴스에 접근할 수 없고, 스택을 거쳐 접근한다.
+ */
+var object = SizeObject()
+
+/* 스택에 새로운 메모리가 생성되고
+ * 스택에 저장했던 주소가 그대로 복사된다. 
+ */
+var object2 = object
+
+/* object2를 변경하였지만
+ * object 또한 변경된다.
+ * 둘은 같은 인스턴스를 바라보기 때문이다.
+ */
+object2.width = 1.0
+object2.height = 2.0
+
+/* 인스턴스에 저장된 값을 확인해본다 */
+object
+object2 //모든 인스턴스에 동일한 값이 저장되어 있다.
+</pre></code>
 
 
 
