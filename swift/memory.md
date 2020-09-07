@@ -219,15 +219,145 @@ person2 = nil //이 코드 이후 참조 카운트가 1이 된다. 여전히 참
 person3 = nil //마지막 소유자가 소유권을 포기하면 참조 카운트가 0이 되고, 인스턴스는 이 시점에 메모리에서 제거된다. 이 때 소멸자가 호출된다. 
 </pre></code>
 
+
+## 강한 참조 사이클(Strong reference cycle)
+<pre><code>class Person {
+    var name = "John Doe"
+    var car: Car?
+ 
+    deinit {
+     print("person deinit")
+    }
+}
+
+class Car {
+    var model: String
+    var lessee: Person?
+    
+    init(model: String) {
+        self.model = model
+    }
+    
+    deinit {
+        print("car deinit")
+    }
+}
+
+var person: Person? = Person()  //Person 인스턴스는 person 변수와 강한 참조로 연결된다. 
+var rentedCar: Car? = Car(model: "Porsche") //Car 인스턴스는 rentedCar 변수와 강한 참조로 연결된다.
+
+// 이 시점의 두 인스턴스의 참조 카운트는 모두 1이다.
+
+person?.car = rentedCar //car 속성이 rentedCar 변수에 저장된 인스턴스를 소유하게 된다. 속성과 인스턴스가 강한 참조로 연결되고 Car 인스턴스의 참조 카운트는 2가 된다. 
+rentedCar?.lessee = person //lessee 속성과 Person 인스턴스가 강한 참조로 연결되고, Person 인스턴스의 참조카운트는 2가 된다. 
+
+person = nil //소유권을 포기한다. Person 인스턴스의 참조 카운트가 1 감소한다. Person 인스턴스의 참조 카운트는 여전히 0보다 크기 때문에 메모리에서 제거되지는 않는다.
+rentedCar = nil //Car instance의 참조 카운트도 1 감소한다. 그러나 Car 인스턴스의 참조 카운트는 0보다 크다(1이다.) 따라서 메모리에서 제거되지 않는다. 
+</pre></code>
+
+문제점은 두 인스턴스가 속성을 통해서 서로를 소유하고 있다는 점이다.
+person 변수와 rentedCar 변수에 nil을 저장해서 더이상 인스턴스에 접근할 수단이 없다. 
+그래서 두 인스턴스를 정상적으로 해제할 방법이 없다.
+nil 을 다시 할당한다고 해도 불가능하다. 왜냐하면 인스턴스가 제거되었기 때문이다. 
+이와 같이 강한 참조 떄문에 인스턴스를 정상적으로 해제할 수 없는 문제를 *강한 참조 사이클*이라고 한다.
+ARC는 메모리를 대신 처리해주지만, 참조 사이클까지 자동으로 처리하지는 못한다. 
+
+강한 참조 사이클은 약한 참조(Weak reference)와 비소유 참조(Unowned Reference)를 통해 해결한다. 
+두가지 방식 모두 인스턴스 사이의 강한 참조를 제거하는 방식으로 문제를 해결한다. 
+강한 참조와는 달리 참조 카운트를 증가시키거나 감소시키지 않는다. 따라서 참조를 통해 인스턴스에 접근할 수는 있지만, 인스턴스가 사라지지 않도록 유지하는 것은 불가능하다. 
+
 #### Weak Reference
+인스턴스를 참조하지만 소유하지는 않는다. 참조카운트도 변하지 않는다. 
+그래서 대상 인스턴스를 참조하고 있는 동안, 대상 인스턴스는 언제든 사라질 수 있다. 
+이런 특징 때문에 소유자에 비해 짧은 생명주기를 가진 인스턴스를 참조할 때 주로 사용한다. 
+약한 참조는 항상 옵서널 형식으로 선언한다. 
+그리고 var 키워드 앞에 weak 키워드를 추가한다.
+
+<pre><code>weak var name: Type?</pre></code>
+
+참조하고 있는 인스턴스가 해제되면 자동으로 nil로 초기화 된다. 
+
+<pre><code>class Person{
+    var name = "John Doe"
+    var car: Car?
+ 
+    deinit {
+     print("person deinit")
+    }
+}
+
+class Car {
+    var model: String
+    weak var lessee: Person? //weak 키워드를 추가한다. 그러면 속성이 약한 참조로 선언되고 Person인스턴스를 참조하지만 소유하지는 않게 된다. 그래서 강한 참조 사이클이 제거된다.
+    
+    init(model: String) {
+        self.model = model
+    }
+    
+    deinit {
+        print("car deinit")
+    }
+}
+
+var person: Person? = Person()  
+var rentedCar: Car? = Car(model: "Porsche")
+
+person?.car = rentedCar //여기까지는 이전 코드와 동일하다.
+rentedCar?.lessee = person //lessee는 약한 참조로 선언되어 있어서 Person 인스턴스의 인스턴스 카운트를 증가시키지 않는다. 
+
+person = nil //참조 카운트가 0이 되면서 인스턴스가 메모리에서 제거된다. 이 때 car 속성이 제거되면서 car instance에 대한 소유권을 자동으로 포기한다. 
+Car instance 의 참조 카운트가 1 감소하고 lessee 속성은 nil 로 초기화 된다. (약한 참조는 참조하는 인스턴스가 해제되면 자동으로 nil로 초기화 된다.)
+약한 참조를 통해 강한 참조 사이클이 제거 되었고, Person인스턴스에서 소멸자가 실행된 후 메모리에서 제거된다. 
+
+rentedCar = nil //Car instance의 참조카운트가 0이 되고, 메모리에서 제거된다. 
+</pre></code>
+
+모든 소멸자가 호출됨을 위 코드로 확인할 수 있을 것이다. 
 
 #### Unowned Reference
+비소유 참조는 약한참조와 동일한 방식으로 강한 참조 사이클을 해결한다.
+그러나 optional 형식이 아니라 non-optional 형식이다. 
+참조 사이클을 해결하면서 속성을 non-optional로 선언해야 할 때 주로 사용된다. 
+그리고 인스턴스의 생명주기가 소유자와 같거나 더 긴 경우에 주로 사용된다. 
 
+비소유 참조는 unowned 키워드를 통해 선언한다. 그리고 약한 참조와는 달리 non-optional 형식으로 선언한다. 
+optional 형식이 아니기 때문에 참조하고 있는 인스턴스가 해제되어도 nil로 초기화 되지 않는다.
+그래서 해제된 인스턴스에 접근할 경우 런타임 에러가 발생한다. 
+<pre><code>unowned var name: Type</pre></code>
 
+<pre><code>class Person{
+    var name = "John Doe"
+    var car: Car?
+ 
+    deinit {
+     print("person deinit")
+    }
+}
 
+class Car {
+    var model: String
+    unowned var lessee: Person //unowned 키워드를 추가한다
+    
+    init(model: String, lessee: Person) { //생성자를 수정하였다
+        self.model = model
+        self.lessee = lessee
+    }
+    
+    deinit {
+        print("car deinit")
+    }
+}
 
+var person: Person? = Person()  
+var rentedCar: Car? = Car(model: "Porsche", lessee: person!)
 
+person?.car = rentedCar
+이렇게 하면 두 인스턴스가 서로를 참조하게 된다.
 
+person = nil
+rentedCar = nil
+모든 인스턴스가 정상적으로 해지됨을 볼 수 있다
+</pre></code>
 
 
 
