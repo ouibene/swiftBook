@@ -80,10 +80,14 @@ d //값이 정상적으로 교체된다.
 
 #### Type Constraints(형식 제약) 문법
 아래와 같이 기술하면 타입파라미터가 대체할 수 있는 형식이 이 클래스와, 이 클래스를 상속한 형식으로 제한된다.
-<pre><code> <TypeParameter: ClassName> </pre></code>
+```
+<TypeParameter: ClassName> 
+```
 
 프로토콜을 채용한 형식으로 제한된다.
-<pre><code> <TypeParameter: ProtocolName> </pre></code>
+``` 
+<TypeParameter: ProtocolName>
+```
 
 <pre><code>func swapValue<T: Equatable>(lhs: inout T, rhs: inout T) {
     /* 위와 같이 Equatable 프로토콜을 채용하면 equal to 연산자를 통해 비교할 수 있는 값만 전달할 수 있게 된다. */
