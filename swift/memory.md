@@ -360,5 +360,154 @@ rentedCar = nil
 </pre></code>
 
 
+## Closure capture list
+클로저(Closure) 에서도 참조 사이클이 발생할 수 있다. 
+클로저가 인스턴스를 캡처하고, 인스턴스는 클로저를 강한 참조로 소유하는 상황에서 발생한다. 
+이 경우에도 약한 참조와 비소유 참조를 통해 해결한다. 
 
+<pre><code>class Car {
+    var totalDrivingDistance = 0.0
+    var totalUsedGas = 0.0
+    
+    lazy var gasMileage: () -> Double = { //지연 저장 속성으로 선언되어 있고, Double를 리턴하는 클로저가 저장되어 있다. 
+        return self.totalDrivingDistance / self.totalUsedGas 
+        /* 클로저는 self expression 을 이용하여 인스턴스 속성에 접근하고 있다. 
+        self는 인스턴스 자체를 나타내는 특별한 속성이다. 이 속성을 클로저에서 사용하면 self가 나타내는 인스턴스가 캡처된다.
+        클로저는 실행이 종료될 때 까지 self를 강한 참조로 캡처한다. 그래서 self가 나타내는 인스턴스는 클로저의 실행이 완료될 떄 까지 메모리에서 제거되지 않는다.
+        인스턴스를 캡처하는 클로저는 인스턴스 속성에 저장되어 있다. 속성이 약한 참조 또는 비소유 참조로 선언되어있지 않기 때문에 
+        인스턴스는 속성에 저장된 클로저를 강하게 참조한다. 결과적으로 클로저와 인스턴스는 강한 참조로 연결된다. */
+    }
+    
+    func drive() {
+        self.totalDrivingDistance = 1200.0
+        self.totalUsedGas = 73.0
+    }
+    
+    deinit { 
+        print("car deinit")
+    }
+}
 
+var myCar1: Car? = Car()
+myCar1?.drive() //아직 클로저가 실행되지 않았고 강한 참조 사이클도 발생하지 않는다.
+myCar1 = nil //deinit 디버그 메시지가 출력된다. (인스턴스가 정상적으로 해지됨)
+
+var myCar2: Car? = Car()
+myCar2?.gasMileage() //이 시점에 클로저가 실행되고 self(myCar2 instance)를 소유하고 강한 참조 사이클이 발생한다. 
+myCar2 = nil //소멸자가 호출되지 않는다. 강한 참조 사이클 때문에 인스턴스가 정상적으로 해지되지 않았기 때문이다.
+</pre></code>
+
+## Closure capture list 의 문법
+클로저 캡처 리스트는 클로저 문법에서 parameters 앞에 온다. 그리고 Squre braket 사이에 캡처 할 대상을 콤마로 구분하여 나열한다. 
+<pre><code>{ [list] (parameters) -> ReturnType in
+    Code
+}</pre></code>
+
+클로저에서 문법 최적화를 통해 parameters와 return type을 생략할 때에는 in 키워드를 생략할 수 있으나, 
+클로저 캡처 리스트를 사용할 때에는 in 키워드를 생략할 수 없고 list 가 in 키워드의 앞에 위치한다. 클로저 바디와 구분하기 위해 반드시 필요하다.
+<pre><code>{ [list] in
+    Code
+}</pre></code>
+
+클로저 캡처 리스트는 세 가지 형태로 작성한다.
+
+### Value Type
+값 형식을 캡처할 떄에는 대상의 이름만 표기한다. 
+<pre><code>{ [valueName] in
+    Code
+}</pre></code>
+
+#### 예제
+이 코드에서 c 상수에 저장된 클로저는 a, b 두 변수를 캡처한다.
+클로저가 값을 캡처할 때는 복사본이 아닌 참조가 저장된다.
+변수의 값을 바꾼 다음 클로저를 실행해보자.
+<pre><code>
+var a = 0
+var b = 0
+let c = { print(a, b) }
+
+a = 1
+b = 2
+c()    //1 2가 출력됨
+</pre></code>
+
+이번에는 a 변수를 클로저 캡처 리스트에 추가한다. 스퀘어 브라켓 사이에 대상의 이름을 나열한다.
+<pre><code>
+var a = 0
+var b = 0
+let c = { [a] in print(a, b) }
+
+a = 1
+b = 2
+c()    //a의 값은 캡처 시점에 저장되어 있는 값으로 출력된다. (0 2 가 출력 됨)
+</pre></code>
+값 형식을 클로저 캡처 리스트에 추가하면 참조 대신 복사본을 캡처한다. 
+
+### Reference Type
+참조 형식을 캡처할 때는 반드시 대상 앞에 weak 키워드나 unowned 키워드가 있어야 한다. 
+weak 키워드는 약한 참조로 캡처하고, unowned 는 비소유 참조로 캡처한다. 
+<pre><code>{ [weak instanceName, unowned instanceName] in
+    statements
+}</pre></code>
+
+클로저 캡처 리스트를 사용하여 이전의 코드에서 발생했던 참조 사이클 문제를 해결해보자.
+#### weak reference 를 통한 참조 사이클 해결
+<pre><code>class Car {
+    var totalDrivingDistance = 0.0
+    var totalUsedGas = 0.0
+    
+    lazy var gasMileage: () -> Double = { [weak self] in        //약한 참조
+        guard let strongSelf = self else {return 0.0}
+        return strongSelf.totalDrivingDistance / strongSelf.totalUsedGas 
+        /* 약한 참조는 옵셔널 형식이다. 그래서 self에 접근할 때 unwrapping 하거나 optional chaining 으로 멤버에 접근해야 한다.
+           클로저의 실행이 완료되지 않은 시점에 캡처 대상이 해제될 수 있다면 주로 약한 참조를 사용한다. 
+           만약 car instance 가 해지된 직후 클로저가 호출되었다면 self는 nil 이 된다. 
+           그래서 옵셔널 바인딩이 실패하고 코드가 종료된다.
+           약한 참조로 캡처할 때는 캡처 대상이 해제된 경우도 함께 고려해야 한다.
+           클로저에서 인스턴스를 약한 참조로 캡처하고 있기 때문에 더이상 강한 참조 사이클은 발생하지 않는다. */
+    }
+    
+    func drive() {
+        self.totalDrivingDistance = 1200.0
+        self.totalUsedGas = 73.0
+    }
+    
+    deinit { 
+        print("car deinit")
+    }
+}
+
+var myCar: Car? = Car()
+myCar?.gasMileage() 
+myCar = nil //소멸자가 호출된다.
+</pre></code>
+
+#### unowned reference 를 통한 참조 사이클 해결
+<pre><code>class Car {
+    var totalDrivingDistance = 0.0
+    var totalUsedGas = 0.0
+    
+    lazy var gasMileage: () -> Double = { [unowned self] in        //비소유 참조. 옵셔널 형식이 아니기 때문에 옵셔널 바인딩이나 옵셔널 체이닝은 필요 없다. 
+        return self.totalDrivingDistance / self.totalUsedGas 
+        /* 클로저 캡처 리스트를 사용하지 않은 코드와 동일한 방식으로 속성에 접근하고 있다.
+           그러나 여기에서 사용된 self는 비소유 참조로 캡처되었기 때문에 더이상 강한 참조 사이클 문제를 발생시키지 않는다. */ 
+    }
+    
+    func drive() {
+        self.totalDrivingDistance = 1200.0
+        self.totalUsedGas = 73.0
+    }
+    
+    deinit { 
+        print("car deinit")
+    }
+}
+
+var myCar: Car? = Car()
+myCar?.gasMileage() 
+myCar = nil //소멸자가 호출된다.
+</pre></code>
+
+비소유 참조로 캡처한 대상은 클로저 실행이 종료되기 전에 해지될 수 있다.
+해지된 대상에 접근하는 경우 런타임 오류가 발생하기 때문에 유의한다.
+그래서 비소유 참조는 캡처 대상의 생명 주기가 클로저와 같거나 더 긴 경우에 주로 사용한다. 
