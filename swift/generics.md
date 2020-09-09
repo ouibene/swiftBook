@@ -138,15 +138,136 @@ swapValue(lhs: &c, rhs: &d) //specialized version이 호출된다.
 그리고 제네릭 함수보다 우선순위가 높다. 그래서 모든 함수가 문자열을 받을 수 있지만, 우선순위가 높은 두번째 함수가 호출된다. */
 </pre></code>
 
+## Generic Types
+
+컬렉션에는 동일한 형식의 값만 저장할 수 있다. 제네릭 타입을 공부하고 나면 그 이유를 알 수 있다. 
+
+### 선언
+제네릭 타입은 기존 형식에 타입 파라미터를 추가하면 제네릭 타입으로 선언된다. 
+타입 파라미터는 형식 이름 뒤에 선언한다.
+문법은 제네릭 함수에서 공부했던 것과 동일하고, 형식 제약 문법도 동일하다.
+속성의 자료형, 메서드의 리턴형, 파라미터 형식처럼 형식 내부에서 사용되는 형식들을 타입 파라미터로 대체할 수 있다.
+```
+class Name<T> {
+    code
+}
+
+struct Name<T> {
+    code
+}
+
+enum Name<T> {
+    code
+}
+```
+
+```
+struct Color<T> {
+    var red: T
+    var green: T
+    var blue: T
+}
+
+var c = Color(red: 128, green: 80, blue: 200)
+/* 여기에서 c의 자료형은 Color<Int> 이다. 여기에서의 Int는 타입파라미터를 대체하는 형식이다.
+생성자를 호출하면서 파라미터로 Int의 값을 전달해서, 타입파라미터가 Int로 추론되었기 때문이다. */
+
+c = Color(red: 128.0, green: 80.0, blue: 200.0) //Error! Cannot assign value of type 'Color<Double>' to type 'Color<Int>'
+/* 제네릭 타입의 인스턴스를 생성하면 컴파일러가 타입 파라미터에 적합한 형식을 자동으로 생성한다. 
+   여기에서는 타입파라미터가 Int, Double 이렇게 하나씩 만들어진다. 그리고 두 형식은 별도의 형식으로 처리된다. */
+```
+
+에러인 코드를 지우고 새로운 상수에 인스턴스를 저장해보자.
+그리고 이번에는 형식을 직접 선언한다. 
+```
+let d: Color = Color(red: 128.0, green: 80.0, blue: 200.0) //(O) 이 경우에는 이전 코드처럼 타입파라미터가 자동으로 추론된다. 
+```
+
+아래의 경우에는 더이상 추론할 수 없게 되고, 타입파라미터의 형식을 직접 선언해야 한다. 
+```
+let d: Color //Error!
+```
+
+아래와 같이 타입파라미터의 형식을 직접 선언해본다.
+```
+let d: Color<Int>
+```
+
+새로운 배열을 하나 선언해보자.
+```
+let arr: [Int]
+```
+위 코드는 단축 문법으로 선언한 상수이다.
+단축 문법이 아닌 정식 문법으로 선언해보자.
+
+아래와 같이 Array<Int>라고 선언한다.
+Array 형식에는 배열을 처리하는 다양한 코드가 있다. 다양한 형식을 처리할 수 있도록 제네릭 타입으로 구현되어 있고,
+<Int>라고 선언하면 컴파일러가 Int를 처리하는 코드를 자동으로 생성한다. 
+```
+let arr: Array<Int>
+```
+
+딕셔너리도 마찬가지이다.
+```
+let dict: Dictionary<String, Double>
+```
 
 
+extension을 이용하여 제네릭 타입을 확장해보자.
+제네릭 타입을 확장할 때는 타입 파라미터를 형식 이름 뒤에 추가하지 않는다. 
+extension Color<T> 라고 사용하면 컴파일 에러가 발생한다. 형식에서 선언한 타입 파라미터를 변경하는 것이 불가능하다. 
+```
+struct Color<T> {
+    var red: T
+    var green: T
+    var blue: T
+}
+  
+extension Color {
+    func getComponents() -> [T] { //익스텐션에서도 동일한 파라미터를 사용해야 한다. 메서드의 리턴형을 타입 파라미터로 선언할 때에도 T를 사용한다. 
+      return [red, green, blue]
+    }
+}
+
+익스텐션을 추가한 멤버는 기본적으로 타입 파라미터에 관계 없이 모든 컬러 형식에 추가된다. 
+
+let intColor = Color(red: 1, green: 2, blue: 3) //타입 파라미터가 Int로 추론된다. 
+intColor.getComponents() // intColor 메서드의 리턴형은 보면 Int 이다.
+
+let doubleColor = Color(red: 1.0, green: 2.0, blue: 3.0) //타입 파라미터가 Double로 추론된다.
+doubleColor.getComponents() //메서드의 리턴형은 더블이다.
+```
 
 
+타입 파라미터에 형식 제약을 추가할 수 있는 것 처럼, 익스텐션에서 확장 대상을 제한하는 것도 가능하다.
+형식 이름에 where 를 추가해보자. 
+```
+struct Color where T: FixedWidthInteger { 
+    var red: T
+    var green: T
+    var blue: T
+}
+  
+extension Color {
+    func getComponents() -> [T] {
+      return [red, green, blue]
+    }
+}
 
+익스텐션을 추가한 멤버는 기본적으로 타입 파라미터에 관계 없이 모든 컬러 형식에 추가된다. 
 
+let intColor = Color(red: 1, green: 2, blue: 3) 
+intColor.getComponents()
 
+let doubleColor = Color(red: 1.0, green: 2.0, blue: 3.0) 
+doubleColor.getComponents() //Error! 
+/* FixedWidthInteger 프로토콜은 Int형식이 채용하고 있지만 Double형식은 채용하고 있지 않다.
+   타입 파라미터가 Int로 추론되는 형식에는 메서드가 추가되지만, Double인 경우 추가되지 않는다. 
+   추가되지 않은 메서드를 호출하는 마지막 코드에서 에러가 발생하는 것이다. */
+```
 
-
-
-
-
+이 프로토콜을 채용한 모든 형식에 메서드가 추가된다. 만약 Int 형식에만 추가하고 싶다면 
+```
+struct Color where T == Int { 
+```
+이렇게 대상 형식을 직접 지정하도록 한다.
