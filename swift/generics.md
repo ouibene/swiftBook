@@ -271,3 +271,92 @@ doubleColor.getComponents() //Error!
 struct Color where T == Int { 
 ```
 이렇게 대상 형식을 직접 지정하도록 한다.
+
+
+## Associated Types
+제네릭 프로토콜을 선언하는 방법
+
+프로토콜이 하나 선언되어 있고 메서드 두개가 선언되어 있다. 
+이 프로토콜을 채용한 형식은 메서드를 구현할 때 파라미터의 자료형과 리턴형을 반드시 일치시켜야 한다.
+```
+protocol QueueCompatible{
+  func enqueue(value: Int) //value parameter의 자료형을 Int로 선언하여야만 한다.
+  func dequeue() -> Int?
+}
+```
+
+위 프로토콜을 제네릭 프로토콜로 바꾸어 보자.
+```
+protocol QueueCompatible<T>{//Error!
+  func enqueue(value: T)    //Error!
+  func dequeue() -> T?      //Error!
+}
+```
+  
+제네릭 프로토콜을 선언할 때는 Associated Types(연관 형식)을 사용해야 한다.
+associated type은 다음과 같이 선언한다. 
+```
+associatedtype Name //이름은 Upper camel case로 짓는 것이 컨벤션이다.
+```
+연관 형식은 타입 파라미터와 마찬가지로 프로토콜 내에서 실제 형식으로 대체되는 placeholder이며 새로운 형식은 아니다.
+
+```
+protocol QueueCompatible{
+  associatedtype Element
+  func enqueue(value: Element) 
+  func dequeue() -> Element?
+}
+```
+연관형식은 프로토콜에서 사용하는 플레이스 홀더 형식이다. 요구사항을 선언하는 것은 아니다.
+따라서 프로토콜을 채용한 형식에서 다시 연관 형식을 선언 할 필요는 없다. 
+
+연관 형식을 대체하는 실제 형식은 프로토콜을 채용한 형식에 따라서 결정된다.
+연관 형식이 선언된 프로토콜을 채용한 형식은 typealias 키워드로 연관 형식의 실제 형식을 선언해야 한다.
+```
+typealias AssociatedTypeName = Type
+```
+
+```
+protocol QueueCompatible{
+  associatedtype Element
+  func enqueue(value: Element) 
+  func dequeue() -> Element?
+}
+
+class IntegerQueue: QueueCompatible {
+  typealias Element = Int //연관 형식을 Int로 선언
+  
+  func enqueue(value: Int) { //앞에서 연관 형식을 Int로 선언했기 때문에 파라미터 형식도 Int가 되어야 한다. 
+                             //만약 다른 형식으로 선언하면 프로토콜의 요구사항을 충족시키지 못한다. 
+    
+  }
+  
+  func dequeue() -> Int? {   //dequeue method 또한 리턴 형식을 맞춰 주어야 한다. 
+    return 0
+  }
+}
+
+class DoubleQueue: QueueCompatible {
+  //이번에는 연관 형식을 생략하고 바로 메서드를 구현해보자.
+  func enqueue(value: Double) {
+  
+  }
+  
+  func dequeue() -> Double? {
+    return 0
+  }
+} //이런 식으로 선언하면 연관 형식이 Double로 추론된다.
+  //사용된 실제 형식을 통해서 연관 형식을 추론할 수 있기 때문에 연관 형식을 생략해도 문제가 없다. 
+  //그래서 typealias를 많이 생략한다. 
+```
+
+연관 형식에 제약을 추가하는 방법은 타입파라미터와 동일하다.
+연관 형식을 equatable 프로토콜을 채용한 형식으로 제한하고 싶다면
+연관 형식 이름 뒤에 콜론을 쓰고 프로토콜을 추가하면 된다. 
+```
+protocol QueueCompatible{
+  associatedtype Element: Equatable //이렇게 연관 형식의 이름 뒤에 콜론을 쓰고 프로토콜을 추가한다. 
+  func enqueue(value: Element) 
+  func dequeue() -> Element?
+}
+```
