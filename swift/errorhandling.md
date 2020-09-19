@@ -108,9 +108,9 @@ func parsing(data: [String: Any]) throws {
 
 expression 부분에는 주로 throwing function, throwing method, throwing Initializer, Throwing Closure가 사용된다.
 ```
-try expression  // do catch 문과 주로 사용한다.
+try expression  // try. do catch 문과 주로 사용한다.
 try? expression // optional 이 결합된 형태. optional try. 표현식에서 에러가 발생할 경우 nil을 리턴한다.
-try! expression // optional 이 결합된 형태. 에러가 발생할 경우 런타임 에러가 발생한다. 가능하다면 사용하지 않는다. 
+try! expression // optional 이 결합된 형태. forced try. 에러가 발생할 경우 런타임 에러가 발생한다. 가능하다면 사용하지 않는다. 
 ```
 
 자동완성에서 오른쪽에 throws 가 표시되면 반드시 try 표현식으로 호출하도록 한다. 
