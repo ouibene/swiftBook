@@ -135,3 +135,157 @@ try? parsing(data: [:]) //파라미터로 빈 딕셔너리를 호출. nil을 리
 3. hand over
 
 
+## do-catch Statements
+do-catch Statements 의 문법은 아래와 같다. 
+```
+do { //do block은 필수 블럭이다
+    try expression //에러가 발생할 수 있는 코드를 실행한다.
+    statements
+} catch pattern { //try 표현식에서 에러가 발생하면 do block에서 이어지는 코드는 실행되지 않고 catch 블럭이 실행된다. 
+    statements
+} catch pattern where condition { //where절을 추가하여 매칭시킬 에러패턴의 조건을 추가할 수 있다. 
+    statements
+}
+```
+do block에서 발생 가능한 모든 에러는 catch 블럭을 통해 모두 처리되어야 한다.
+catch 블럭을 생략한 경우에는 에러가 다른 코드로 전파될 수 있도록 구형해야만 한다. 
+
+```
+enum DataParsingError: Error {
+    case invalidType
+    case invalidField
+    case missingRequiredField(String)
+}
+
+func parsing(data: [String: Any]) throws {
+    guard let _ = data["name"] else {
+        throw DataParsingError.missingRequiredField("name")
+    }
+    
+    guard let _ = data["age"] as? Int else {
+        throw DataParsingError.invalidType
+    }
+    
+    // Parsing ... (omitted)
+}
+
+do {
+    try parsing(data: [:]) //parsing 데이터 함수는 throwing function 이기 때문에 throwing 표현식을 통해 호출하여야 한다. 
+} catch DataParsingError.invalidType {
+    print("invalid type error")
+} catch { //error pattern 생략
+    print("handle error")
+} 
+/* 위 코드를 실행하면 파싱 함수에서 첫번째 가드문의 else block이 실행된다. 
+ * 그리고 그곳에서 던지는 에러가 do-catch block으로 전달된다. 
+ * 첫번째 block과는 매칭되지 않고 두번째 block에 매칭된다. (handle error 가 출력됨)
+ */
+```
+
+catch block을 작성할 때에는 까다로운 패턴부터 작성해야 한다. 
+catch block간의 순서룰 바꾸어보자.
+```
+do {
+    try parsing(data: ["name":""])  //함수를 호출할 때 전달하는 값 수정
+} catch { 
+    print("handle error")
+} catch DataParsingError.invalidType {
+    print("invalid type error")
+} 
+```
+위 코드처럼 작성한다고 해도 에러는 발생하지 않는다.
+그러나 어떤 에러가 발생하더라도 항상 첫번째 catch block의 handle error 가 출력될 것이다. 
+위 코드에서 invalid type error가 전달되기 때문에 두번째 블록이 실행될 것 같지만,
+항상 첫번째 블록과 매칭되기 때문에 두번째 블록은 실행되지 않는다. 
+그래서 패턴이 생략된 캐치 블록은 항상 마지막에 작성해야 한다. 
+그리고 패턴이 여러개 있는 경우에는, 가장 까다로운 패턴부터 작성하도록 한다. 
+
+다시 아래와 같이 바꾸어보자.
+```
+do {
+    try parsing(data: ["name":""]) 
+} catch DataParsingError.invalidType {
+    print("invalid type error")
+} catch { 
+    print("handle error")
+} 
+```
+이번에는 invalid type error와 매칭되고 invalid type error 가 출력된다.
+
+마지막 캐치 블럭을 삭제해보자.
+현재는 do-catch block이 global scope에서 작성되었다. 
+이 경우에는 모든 에러를 처리하지 않아도 컴파일 에러가 발생하지 않는다.
+그러나 실제 프로젝트에서는 이렇게 global scope에서 작성하는 경우는 없다.
+```
+do {
+    try parsing(data: ["name":""]) 
+} catch DataParsingError.invalidType {
+    print("invalid type error")
+} 
+```
+
+코드를 함수 내부로 이동시켜보자. 
+```
+func handleError() {
+  do {
+    try parsing(data: ["name":""]) 
+  } catch DataParsingError.invalidType {
+    print("invalid type error")
+  } 
+}
+/* compile error! */
+```
+do-catch 문은 반드시 do 블럭에서 발생할 수 있는 모든 에러를 catch block에서 처리해야 한다.
+에러를 해결하는 방법은 두 가지이다.
+이전 코드처럼 발생할 수 있는 모든 에러를 처리할 수 있는 catch block을 구현하거나,
+handle error 함수가 나머지 에러를 다른 코드로 던지도록 선언한다. 
+
+```
+func handleError() throws { //throws 키워드를 추가하여 invalid type을 제외한 나머지 타입의 에러를, handleError를 호출한 코드로 전달한다.
+  do {
+    try parsing(data: ["name":""]) 
+  } catch DataParsingError.invalidType {
+    print("invalid type error")
+  } 
+}
+```
+
+아래와 같이 catch block을 모두 생략하고 에러를 무조건 던지도록 구현할 수도 있다. 
+```
+func handleError() throws {
+  do {
+    try parsing(data: ["name":""]) 
+  }
+}
+```
+
+위와 같은 경우에는 do-catch 문을 쓰지 않고 try 표현식을 바로 호출해도 문제가 없다. 
+```
+func handleError() throws {
+  try parsing(data: ["name":""]) 
+}
+```
+
+### 패턴이 없는 catch block
+패턴이 없는 catch block은 대부분 아래와 같이 구현한다. 
+```
+func handleError() throws {
+  do {
+    try parsing(data: ["name":""]) 
+  } catch {
+    /* 어떤 에러가 발생했는지 판단 할 수단이 필요하다.
+     * 패턴이 없는 catch block에는 error라는 특별한 local 상수가 제공된다. 
+     * error 상수의 형식이 실제 에러 형식이 아니라 에러 프로토콜이기 때문에
+     * type casting 이 필요하다. 
+     */
+    if let error = error as? DataParsingError {
+        switch error {
+            case .invalidType:
+                print("invalid type")
+            default:
+                print("handle error")
+        }
+    }
+  }
+}
+```
