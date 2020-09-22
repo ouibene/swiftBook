@@ -289,3 +289,60 @@ func handleError() throws {
   }
 }
 ```
+
+## Optional Try
+에러를 던지는 함수나 생성자를 호출할 때는 try 표현식을 사용해야 한다. 
+do block이 아닌 다른 곳에서 호출할 때는 optional try, forced try 를 사용한다. 
+optional try는 표현식에서 에러가 전달된 경우 nil을 return한다.
+반면 forced try는 실행을 중지한다. 다시 말해서 런타임 에러가 발생한다. 
+```
+try? expression //Optional try
+try! expression //Forced try
+```
+
+```
+enum DataParsingError: Error {
+    case invalidType
+    case invalidField
+    case missingRequiredField(String)
+}
+
+func parsing(data: [String: Any]) throws {
+    guard let _ = data["name"] else {
+        throw DataParsingError.missingRequiredField("name")
+    }
+    
+    guard let _ = data["age"] as? Int else {
+        throw DataParsingError.invalidType
+    }
+    
+    // Parsing ... (omitted)
+}
+
+if let _ = try? parsing(data: [:]) {
+    print("success")
+} else {
+    print("fail") //binding 에 실패한 경우. 빈 딕셔너리를 전달한 경우 이 문자열이 출력된다.
+}
+
+/* 위 코드를 do catch 문으로 구현해보자 */
+do {
+    try parsing(data: [:])
+    print("success")
+} catch {
+    print("fail")
+} 
+/* if block 은 do block 으로,
+ * else block은 pattern 이 없는 catch block 으로 구현했다. */
+
+/* optional try를 사용할 때 반드시 optional binding 을 사용해야 하는 것은 아니다.
+그냥 함수만 호출하고 결과는 신경 쓸 필요가 없다면, optional try만 작성한다. */
+try? parsing(data: [:])
+
+try! parsing(data: ["name": "steve", "age": 33]) //parameter로 올바른 dictionary 전달. 아무 문제가 없다.
+try! parsing(data: [:]) //runtime error가 발생한다. 실제 디바이스에서 실행한다면 crash 가 발생한다. 
+
+/* forced try는 표현식에서 발생한 에러를 다른 곳으로 전달할 수 없다. 그리고 do-catch 를 통해 에러를 처리하는 것도 불가능하다.
+   에러가 발생하는 즉시 프로그램이 강제로 종료되기 때문이다. 따라서 forced try는 사용하지 않는 것이 좋다. 
+   에러가 발생하지 않는 것이 확실한 경우에만 제한적으로 사용해야 한다. */
+```
