@@ -346,3 +346,159 @@ try! parsing(data: [:]) //runtime error가 발생한다. 실제 디바이스에�
    에러가 발생하는 즉시 프로그램이 강제로 종료되기 때문이다. 따라서 forced try는 사용하지 않는 것이 좋다. 
    에러가 발생하지 않는 것이 확실한 경우에만 제한적으로 사용해야 한다. */
 ```
+
+### defer Statements
+defer문은 코드의 실행을 scope가 종료되는 시점으로 연기시킨다.
+주로 코드에서 사용했던 자원을 정리할 때 사용한다.
+
+```
+defer {
+    statements
+}
+```
+defer문을 호출하면 블록에 포함된 코드가 바로 실행되지는 않는다.
+대신 defer 문이 호출된 scope의 실행이 종료될 때 까지 연기된다.
+
+아래 함수는 parameter 로 전달된 경로에서 파일을 loading 을 한 후, 
+필요한 작업을 하고 파일을 닫는다.
+파일 처리에서는 파일을 여는 것 보다 닫는 것이 중요하다.
+코드가 길어짐에 따라 종종 파일을 닫지 않았는데 함수가 종료되는 경우가 있다. 
+```
+func processFile(path: String) {
+    let file = FileHandle(forReadingAtPath: path)
+    
+    //process
+
+    
+    if path.hasSuffix(".jpg") {
+        return
+    }
+    
+    file?.closeFile() 
+}
+```
+
+defer 문을 사용하면 문제를 해결할 수 있다.
+defer문의 실행은 함수가 종료될 때 까지 연기된다.
+런타임 오류가 발생해서 프로그램이 비정상적으로 종료되는 경우를 제외하고 항상 함수가 종료되는 시점에 실행된다.
+그래서 함수가 복잡하더라도 항상 closeFile method를 실행한다.
+아래 코드에서는 실행 순서를 파악하기 위해서 간단한 로그를 추가했다. 
+```
+func processFile(path: String) {
+    print("1")
+    let file = FileHandle(forReadingAtPath: path)
+    
+    //process
+    
+    defer {
+        print("2")
+        file?.closeFile()
+    }
+    
+    if path.hasSuffix(".jpg") {
+        print("3")
+        return
+    }
+
+    print("4")
+}
+
+processFile(path: "file.swift")
+```
+
+호출 순서는 아래와 같다.
+먼저 FileHandle 이 생성된 다음, 이어서 defer문이 호출된다.
+그러나 defer 블록에 있는 코드는 바로 실행되지 않고 scope종료시점으로 연기된다.
+그래서 if문이 실행된다. parameter로 swift 확장자가 전달,
+condition이 false로 평가되므로 if문 다음에 있는 코드가 실행된다.
+여기에서 print 함수가 호출된 후 함수 실행이 종료된다.
+이 시점에서 defer 블록이 실행된다.
+
+1, 4, 2의 순서로 출력된다.
+
+확장자를 jpg로 바꾸고 다시 실행한다. 
+```
+func processFile(path: String) {
+    print("1")
+    let file = FileHandle(forReadingAtPath: path)
+    
+    //process
+    
+    defer {
+        print("2")
+        file?.closeFile()
+    }
+    
+    if path.hasSuffix(".jpg") {
+        print("3")
+        return
+    }
+
+    print("4")
+}
+
+processFile(path: "file.jpg")
+```
+
+이번에는 1, 3, 2의 순으로 출력된다. 
+
+if문 뒤에 defer 문을 출력해보자. 
+```
+func processFile(path: String) {
+    print("1")
+    let file = FileHandle(forReadingAtPath: path)
+    
+    //process
+    
+    defer {
+        print("2")
+        file?.closeFile()
+    }
+    
+    if path.hasSuffix(".jpg") {
+        print("3")
+        return
+    }
+    
+    defer {
+        print("5")
+    }
+
+    print("4")
+}
+
+processFile(path: "file.jpg")
+```
+
+위 코드에서 5는 출력되지 않고 1, 3, 2 순으로 출력된다. 
+지금은 jpg 확장자가 전달되기 때문에 방금 추가한 defer 문은 호출되지 않는다.
+defer 문을 구현했다고 해서 항상 defer 블록에 포함된 코드가 실행되는 것은 아니다.
+반드시 defer 문이 호출되어야 종료시점에 실행할 코드가 예약된다.
+이렇게 조건에 따라 defer문이 호출되지 않는 문제를 막기 위해서 주로 scope 시작 부분에 defer 문을 구현한다.
+
+아래와 같은 함수를 호출하면 어떤 순서대로 디버그 문이 출력될까?
+```
+func testDefer() {
+    defer {
+        print(1)
+    }
+    
+    defer {
+        print(2)
+    }
+    
+    defer {
+        print(3)
+    }
+}
+
+testDefer()
+```
+
+정답은 3, 2, 1 순이다. 
+defer문은 호출된 순서대로 코드를 예약한다. 
+여기서는 1을 출력하는 첫번째 블록이 가장 먼저 예약된다.
+예약된 블록이 실행될 때는 가장 마지막에 예약된 블록이 먼저 실행된다.
+defer문이 호출된 순서와 반대이다. 
+이 순서를 모른다면 논리적 오류가 발생할 위험이 있으므로 순서를 인지한다. 
+또한 이러한 오류를 막기 위하여 하나의 defer문만 사용하도록 한다. 
