@@ -93,3 +93,34 @@ perform함수를 호출하면서 argument 로 전달했던 c2 가 perform의 파
 c2 에 저장된 클로저를 보면, 파라미터로 전달된 문자열 앞에 Hello를 붙인 후 문자열을 리턴하고 있다.
 다시 perform 함수에서 closure 가 리턴한 문자열을 print 한다. 
 그래서 Hello, iOS 가 콘솔에 출력되는 것이다. 
+
+클로저를 argument 로 직접 전달하는 것도 가능하다.
+```
+perform(closure: { (str: String) -> String in
+  return "Hi, \(str)"
+})
+```
+Hi, iOS가 출력된다.
+Argument 위치에 작성한 closure를 inline closure라고 한다.
+보통 클로저 바디에서 구현한 코드가 짧은 경우에 이런 인라인 클로저로 작성한다.
+
+### 클로저를 사용하는 실제 예제
+```
+import Foundation
+
+let products = [
+  "MacBook Air", "MacBook Pro",
+  "iMac", "iMac Pro", "Mac Pro", "Mac mini",
+  "iPad Pro", "iPad", "iPad mini",
+  "iPhone Xs", "iPhone Xr", "iPhone 8", "iPhone 7",
+  "AirPods",
+  "Apple Watch Series 4", "Apple Watch Nike+"
+]
+
+/* 프로가 포함되어 있는 제품만 필터링 하는 코드를 구현하자. 
+ * 검색이나 정렬과 관련된 API는 대부분 클로저를 파라미터로 받는다.
+ * 여기에서는 배열이 제공하는 필터 메서드를 사용해보자.
+ */
+
+var proModels = products.filter
+```
